@@ -1,6 +1,11 @@
 """
-Data Preprocessing, handling and cleaning. Additionally, I perform some statistical checks to see if the downloaded data is reasonable.
+Data Preprocessing, handling and cleaning.
+Additionally, I perform some statistical checks to see if the downloaded data is reasonable.
 
+1. Read Sunspot data
+2. Download S&P 500 data
+3. Preprocess
+4. Statistical EDA
 
 """
 
@@ -16,58 +21,62 @@ from sklearn.model_selection import train_test_split
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 
-# Change your
+
+
+# Setting the directory
 print(os.getcwd())
 new_directory_path = "/Users/hiro/documents/github/Wise Capital" #Change to your directory
 os.chdir(new_directory_path)
 print(os.getcwd())
 
+
 cols = ['Year', 'Month', 'Date', 'Sunspot', 'SD', 'N_Obs', 'Provision']
 df = pd.read_csv('SN_m_tot_V2.0.csv', sep=';', header=None, names=cols)
 
-df = df.replace(-1, np.nan)
-df = df[df['Year'] >= 2005]
-df = df.astype(float, errors="ignore")
+df = df.replace(-1, np.nan) #All the NAN are marked as -1 in the data
+df = df[df['Year'] >= 2005] #Let's keep just the last 20 years
+df = df.astype(float, errors="ignore") #To ensure calculations are correct
 
-# Use an econtrolsplicit end date for reproducibility (set to "today" when you run)
-start = "2005-01-01"  # inclusive
-end   = "2025-12-01"  # exclusive (use first day of next month)
+start = "2005-01-01"  
+end   = "2025-12-01"  
 
-ticker = "^GSPC"  # S&P 500 index on Yahoo Finance :contentReference[oaicite:1]{index=1}
+ticker = "^GSPC"  # S&P 500 index on Yahoo Finance
 
 sp = yf.download(
     ticker,
     start=start,
     end=end,
     interval="1mo",
-    auto_adjust=False,  # keep raw OHLC; set True if you want adjusted prices
-    actions=False,      # dividends/splits are not relevant for an index, but keep it explicit
+    auto_adjust=False,  
+    actions=False,     
     progress=False,
 )
 
 
 sp.index.name = "Date"
 
-# Optional: enforce column names and types
-#sp.columns = [c.lower().replace(" ", "_") for c in df.columns]
 sp = sp.astype(float, errors="ignore")
-sp = sp['Adj Close']
+sp = sp['Adj Close'] 
 sp.columns = ['sp']
-sp = np.log(sp / sp.shift(1))
-sp.to_parquet("sp500_gspc_daily_last20y.parquet")
-sp = sp.dropna()
+sp = np.log(sp / sp.shift(1)) #Log Returns
+sp.to_csv("sp500.csv")
+sp = sp.dropna() 
 
+# =========================================================================================================
+# Basic Statistics
+# =========================================================================================================
 
-sns.histplot(sp, bins = 30, color = 'skyblue', edgecolor = 'black')
-plt.show()
-sns.kdeplot(sp, color = 'skyblue')
-plt.show()
 
 print(sp.describe())
 print(f"Skewness: {sp.mean()}")  # 0.00703
 print(f"Skewness: {sp.var()}")  # 0.001873
 print(f"Skewness: {sp.skew()}")  # -0.814331
 print(f"Kurtosis: {sp.kurtosis()}")  #1.766
+
+
+# =========================================================================================================
+# Normality Tests
+# =========================================================================================================
 
 # Jarque-Bera test 
 jb_stat, jb_pvalue = stats.jarque_bera(sp.dropna())
@@ -84,12 +93,15 @@ print(f"Reject normality: {sw_pvalue < 0.05}")
 
 df['sp'] = sp['sp']
 
-
-
-
 sp = sp.squeeze()
 
 fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+
+# =========================================================================================================
+# Plots to check Normality
+# =========================================================================================================
+
 
 # 1. Histogram with normal overlay
 
@@ -157,4 +169,8 @@ print(extreme_events.sort_values())
 expected_extreme = len(sp) * (1 - stats.norm.cdf(threshold) + stats.norm.cdf(-threshold))
 print(f"Expected under normal: {expected_extreme:.1f}")
 print(f"Actual: {len(extreme_events)} (excess: {len(extreme_events) - expected_extreme:.1f})")
+
+
+df.to_csv("df.csv")
+
 
