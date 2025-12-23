@@ -1,3 +1,12 @@
+"""
+Data Analysis. We are looking for evidence (or discredit) on whether sunspots affect the returns on the stock market.
+
+1. Read the clean data
+2. Test stationarity 
+3. Linear regression analysis
+4. Adding some more controls
+
+"""
 
 import os 
 import numpy as np
@@ -113,9 +122,9 @@ X2 = sm.add_constant(reg2[["sunspot"] + controls])
 
 m2 = sm.OLS(y2, X2).fit(cov_type="HAC", cov_kwds={"maxlags": 12})
 
-beta2 = m2.params["sunspot"]
-se2 = m2.bse["sunspot"]
-ci2 = m2.conf_int().loc["sunspot"].values
+beta2 = m2.params["sunspot"] #beta = 0.0001
+se2 = m2.bse["sunspot"] #sd(beta_2) = 0.00005
+ci2 = m2.conf_int().loc["sunspot"].values #[-6.86532707e-06,  2.18383802e-04]
 
 
 print("\n" + "=" * 80)
