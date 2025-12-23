@@ -17,6 +17,7 @@ Sunspots-/
 ├── data/
 │   └── SN_m_tot_V2.0.csv
 │   └── sp500.csv
+│   └── Wise_Capital_Data.csv #Already clean data
 │
 └── outputs/
     ├── plots/
